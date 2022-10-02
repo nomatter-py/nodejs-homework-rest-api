@@ -1,12 +1,15 @@
-const addContactSchema = require("../validation/schema");
 const { RequestError } = require("../helpers");
 
-module.exports = {
-  contactValidation: (req, _, next) => {
-    const { error } = addContactSchema.validate(req.body);
+const validateBody = (schema) => {
+  const func = (req, _, next) => {
+    const { error } = schema.validate(req.body);
     if (error) {
-      throw RequestError(400, error.message);
+      next(RequestError(400, error.message));
     }
     next();
-  },
+  };
+
+  return func;
 };
+
+module.exports = validateBody;
