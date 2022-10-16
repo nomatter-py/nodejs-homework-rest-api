@@ -5,29 +5,27 @@ const { RequestError } = require("../helpers");
 const { SECRET_KEY } = process.env;
 
 const register = async (req, res) => {
-  const { name, email, password } = req.body;
+  const { name, email, password, subscription } = req.body;
   const user = await User.findOne({ email });
   if (user) {
     throw RequestError(409, "Email in use");
   }
   const hashPassword = await bcrypt.hash(password, 10);
-  const result = await User.create({ name, email, password: hashPassword });
+  const result = await User.create({ name, email, subscription, password: hashPassword });
   res.status(201).json({
-    name: result.name,
     email: result.email,
+    subscription: result.subscription,
   });
 };
 
 const login = async (req, res) => {
   const { email, password } = req.body;
   const user = await User.findOne({ email });
-  if (!user) {
-    throw RequestError(401, "Email or password is wrong");
-  }
   const passwordCompare = await bcrypt.compare(password, user.password);
-  if (!passwordCompare) {
+  if (!user || !passwordCompare) {
     throw RequestError(401, "Email or password is wrong");
   }
+ 
   const payload = {
     id: user._id,
   };
