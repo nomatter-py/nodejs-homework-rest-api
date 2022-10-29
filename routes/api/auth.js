@@ -1,7 +1,7 @@
 const express = require("express");
 
 const validateBody = require("../../middlewares/contactValidation");
-
+const upload = require("../../middlewares/upload");
 const auth = require("../../middlewares/auth");
 
 const { ctrlWrapper } = require("../../helpers");
@@ -36,5 +36,7 @@ router.patch(
   validateBody(updateSubcriptionSchema),
   ctrlWrapper(ctrl.updateSubscription)
 );
+
+router.patch("/avatars", auth, upload.single("avatar"), ctrlWrapper(ctrl.updateAvatar));
 
 module.exports = router;
