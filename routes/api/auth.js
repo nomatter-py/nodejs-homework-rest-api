@@ -10,6 +10,7 @@ const {
   registerSchema,
   loginSchema,
   updateSubcriptionSchema,
+  verifyEmailSchema,
 } = require("../../validation/schema");
 
 const ctrl = require("../../controllers/auth");
@@ -22,6 +23,10 @@ router.post(
   validateBody(registerSchema),
   ctrlWrapper(ctrl.register)
 );
+
+router.get("/verify/:verificationToken", ctrlWrapper(ctrl.verify));
+
+router.post("/verify", validateBody(verifyEmailSchema), ctrlWrapper(ctrl.resendVerify))
 
 // signin
 router.post("/login", validateBody(loginSchema), ctrlWrapper(ctrl.login));

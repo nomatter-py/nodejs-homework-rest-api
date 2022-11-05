@@ -8,7 +8,10 @@ const Jimp = require('jimp');
 const User = require("../models/user");
 const avatarsDirectory = path.join(__dirname, "../", "public", "avatars");
 const { RequestError } = require("../helpers");
+const sendEmail = require("../helpers/sendEmail");
+const createVerifyEmail = require("../helpers");
 const { SECRET_KEY } = process.env;
+const { nanoid } = require("nanoid");
 
 const register = async (req, res) => {
   const { name, email, password, subscription } = req.body;
@@ -18,12 +21,31 @@ const register = async (req, res) => {
   }
   const hashPassword = await bcrypt.hash(password, 10);
   const avatarURL = gravatar.url(email);
-  const result = await User.create({ name, email, subscription, password: hashPassword, avatarURL });
+  const verificationToken = nanoid();
+  const result = await User.create({ name, email, subscription, password: hashPassword, avatarURL, verificationToken });
+
+  const mail = createVerifyEmail(email, verificationToken);
+  await sendEmail(mail);
+
   res.status(201).json({
     email: result.email,
     subscription: result.subscription,
   });
 };
+
+
+const verify = async(req, res)=> {
+    const {verificationToken} = req.params;
+    const user = await User.findOne({verificationToken});
+    if(!user){
+        throw RequestError(404, "User not found")
+    }
+    await User.findByIdAndUpdate(user._id, {verify: true, verificationToken: null});
+
+    res.status(200).json({
+        message: "Verification successful"
+    })
+}
 
 const login = async (req, res) => {
   const { email, password } = req.body;
@@ -104,11 +126,30 @@ const updateAvatar = async (req, res) => {
   })
 }
 
+
+const resendVerify = async(req, res) => {
+    const {email} = req.body;
+    const user = await User.findOne({email});
+    if(!user) {
+        throw RequestError(400, "Email not found")
+    }
+    
+    const mail = createVerifyEmail(email, user.verificationToken);
+    await sendEmail(mail);
+
+    res.json({
+        message: "Verification email sent"
+    })
+}
+
+
 module.exports = {
   register,
+  verify,
   login,
   getCurrent,
   logout,
   updateSubscription,
   updateAvatar,
+  resendVerify,
 };
